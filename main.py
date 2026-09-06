@@ -1,11 +1,14 @@
 from fastapi import Depends, FastAPI,Request
 from sqlalchemy.orm import Session
 import os
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database.db import get_db
 from database.models import User
 from schemas.user import UserCreate, UserResponse
 from routes.login import login_router
+from routes.health import router as health_router
+
 
 from exceptions import UserAlreadyExistsError
 
@@ -29,6 +32,13 @@ app = FastAPI(
     title="My API",
     lifespan=lifespan,
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -43,3 +53,5 @@ def get_users(db: Session = Depends(get_db)):
 
 
 app.include_router(login_router)
+app.include_router(health_router)
+
