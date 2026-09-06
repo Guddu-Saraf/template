@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI,Request
 from sqlalchemy.orm import Session
 import os
+from database.db import engine
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database.db import get_db
@@ -15,18 +16,25 @@ from exceptions import UserAlreadyExistsError
 import logging
 from core.logging import setup_logging
 
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging()
-
-    logger = logging.getLogger(__name__)
     logger.info("Application starting")
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+
+        logger.info("Database connection: OK")
+
+    except Exception:
+        logger.exception("Database connection: FAILED")
+        raise
 
     yield
 
     logger.info("Application shutting down")
-
 
 app = FastAPI(
     title="My API",
