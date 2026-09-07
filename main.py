@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI,Request
 from sqlalchemy.orm import Session
 import os
+from fastapi.responses import JSONResponse
 from database.db import engine
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -9,7 +10,7 @@ from database.models import User
 from schemas.user import UserCreate, UserResponse
 from routes.login import login_router
 from routes.health import router as health_router
-
+from sqlalchemy import text
 
 from exceptions import UserAlreadyExistsError
 
@@ -53,6 +54,15 @@ app.add_middleware(
 def home():
     return {"message": "API is running"}
 
+@app.exception_handler(UserAlreadyExistsError)
+async def user_already_exists_handler(
+    request: Request,
+    exc: UserAlreadyExistsError,
+):
+    return JSONResponse(
+        status_code=409,
+        content={"detail": str(exc)},
+    )
 
 @app.get("/users", response_model=list[UserResponse])
 def get_users(db: Session = Depends(get_db)):
